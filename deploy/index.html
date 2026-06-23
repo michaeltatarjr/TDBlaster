@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="theme-color" content="#000000">
+    <title>Tatarbugs Deuterium Blaster</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --yellow: #f5c518;
+            --yellow-dim: #a38410;
+            --yellow-bright: #ffe14d;
+            --black: #0a0a0a;
+            --dark: #1a1a1a;
+            --dark-mid: #252525;
+            --text: #f5c518;
+        }
+
+        body {
+            background: var(--black);
+            color: var(--text);
+            font-family: 'Courier New', monospace;
+            height: 100dvh;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+            padding: 12px;
+            gap: 10px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        header h1 {
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .freq-display {
+            font-size: 1.4rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 8px;
+            border: 1px solid var(--yellow-dim);
+            border-radius: 4px;
+            background: var(--dark);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .freq-display span {
+            font-size: 0.7rem;
+            color: var(--yellow-dim);
+        }
+
+        .pitch-zone {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            min-height: 0;
+        }
+
+        .pitch-slider-container {
+            flex: 1;
+            background: var(--dark);
+            border: 1px solid var(--yellow-dim);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .pitch-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, var(--yellow-dim), var(--yellow));
+            opacity: 0.3;
+            transition: height 0.05s;
+        }
+
+        .pitch-indicator {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--yellow);
+            box-shadow: 0 0 8px var(--yellow);
+            transition: bottom 0.05s;
+        }
+
+        .pitch-labels {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 12px 0;
+            pointer-events: none;
+        }
+
+        .pitch-labels span {
+            font-size: 0.6rem;
+            color: var(--yellow-dim);
+        }
+
+        .overtone-panel {
+            width: 55%;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-y: auto;
+        }
+
+        .overtone-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            padding: 4px 0;
+        }
+
+        .preset-row {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--dark-mid);
+        }
+
+        .preset-btn {
+            background: var(--dark-mid);
+            border: 1px solid var(--yellow-dim);
+            color: var(--yellow);
+            font-size: 0.65rem;
+            padding: 4px 7px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .preset-btn.active {
+            background: var(--yellow);
+            color: var(--black);
+            border-color: var(--yellow);
+        }
+
+        .harmonic-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 0;
+        }
+
+        .harmonic-label {
+            font-size: 0.65rem;
+            width: 20px;
+            text-align: right;
+            color: var(--yellow-dim);
+        }
+
+        .harmonic-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 20px;
+            background: var(--dark);
+            border-radius: 3px;
+            outline: none;
+            border: 1px solid var(--dark-mid);
+        }
+
+        .harmonic-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 20px;
+            background: var(--yellow);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .harmonic-slider::-moz-range-thumb {
+            width: 16px;
+            height: 20px;
+            background: var(--yellow);
+            border-radius: 3px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .harmonic-val {
+            font-size: 0.6rem;
+            width: 28px;
+            text-align: left;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .controls-bottom {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .play-btn {
+            flex: 1;
+            padding: 14px;
+            font-size: 1rem;
+            font-family: inherit;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: var(--yellow);
+            color: var(--black);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .play-btn.active {
+            background: var(--yellow-bright);
+            box-shadow: 0 0 20px rgba(245, 197, 24, 0.4);
+        }
+
+        .play-btn:active {
+            transform: scale(0.98);
+        }
+
+        .vol-control {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .vol-control label {
+            font-size: 0.6rem;
+            color: var(--yellow-dim);
+        }
+
+        .vol-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 80px;
+            height: 16px;
+            background: var(--dark);
+            border-radius: 3px;
+            outline: none;
+            border: 1px solid var(--dark-mid);
+        }
+
+        .vol-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 16px;
+            background: var(--yellow);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .vol-slider::-moz-range-thumb {
+            width: 14px;
+            height: 16px;
+            background: var(--yellow);
+            border-radius: 3px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .waveform-canvas {
+            width: 100%;
+            height: 40px;
+            border: 1px solid var(--dark-mid);
+            border-radius: 4px;
+        }
+
+        .tip-btn {
+            background: none;
+            border: 1px solid var(--yellow-dim);
+            color: var(--yellow-dim);
+            font-family: inherit;
+            font-size: 0.6rem;
+            padding: 3px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            letter-spacing: 1px;
+        }
+
+        .tip-btn:hover, .tip-btn:active {
+            color: var(--yellow);
+            border-color: var(--yellow);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--dark);
+            border: 1px solid var(--yellow-dim);
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 320px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal h2 {
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        .modal canvas {
+            margin: 10px auto;
+            display: block;
+        }
+
+        .btc-address {
+            font-size: 0.55rem;
+            word-break: break-all;
+            background: var(--black);
+            padding: 8px;
+            border-radius: 4px;
+            margin: 10px 0;
+            color: var(--yellow);
+            line-height: 1.4;
+        }
+
+        .copy-btn {
+            background: var(--yellow);
+            color: var(--black);
+            border: none;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 0.75rem;
+            padding: 8px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--yellow-dim);
+            font-family: inherit;
+            font-size: 0.65rem;
+            cursor: pointer;
+            margin-top: 10px;
+            padding: 4px;
+        }
+
+        @media (max-height: 600px) {
+            .freq-display { font-size: 1.1rem; padding: 4px; }
+            .play-btn { padding: 10px; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"
+            integrity="sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1"
+            crossorigin="anonymous"></script>
+</head>
+<body>
+    <div id="loading" style="position:fixed;top:0;left:0;right:0;bottom:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:9999;">
+        <p style="color:#f5c518;font-family:monospace;font-size:1.2rem;">LOADING...</p>
+        <p style="color:#a38410;font-family:monospace;font-size:0.7rem;margin-top:8px;">If you see this, the page reached your phone.</p>
+    </div>
+    <div class="app">
+        <header>
+            <h1>Tatarbugs Deuterium Blaster</h1>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <canvas class="waveform-canvas" width="120" height="40"></canvas>
+                <button class="tip-btn" id="tip-btn">TIP &#9889;</button>
+            </div>
+        </header>
+
+        <div class="modal-overlay" id="tip-modal">
+            <div class="modal">
+                <h2>SEND A TIP</h2>
+                <canvas id="qr-canvas" width="200" height="200"></canvas>
+                <div class="btc-address" id="btc-addr">bc1qlh4ykhmf6qsv2g6pc3rrekl9nm98e63j7ag35w</div>
+                <button class="copy-btn" id="copy-btn">COPY ADDRESS</button>
+                <br>
+                <button class="modal-close" id="modal-close">close</button>
+            </div>
+        </div>
+
+        <div class="freq-display">
+            <span>FREQ</span> <span id="freq-value">440.0</span> Hz
+            <span id="note-name">A4</span>
+        </div>
+
+        <div class="pitch-zone">
+            <div class="pitch-slider-container" id="pitch-area">
+                <div class="pitch-fill" id="pitch-fill"></div>
+                <div class="pitch-indicator" id="pitch-indicator"></div>
+                <div class="pitch-labels">
+                    <span>600</span>
+                    <span>440</span>
+                    <span>200</span>
+                    <span>80</span>
+                    <span>20Hz</span>
+                </div>
+            </div>
+
+            <div class="overtone-panel">
+                <div class="overtone-header">
+                    <span>OVERTONES</span>
+                </div>
+                <div class="preset-row" id="presets"></div>
+                <div id="harmonics-container"></div>
+            </div>
+        </div>
+
+        <div class="controls-bottom">
+            <button class="play-btn" id="play-btn">Play</button>
+            <div class="vol-control">
+                <label>VOL</label>
+                <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="50">
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.getElementById('loading').style.display = 'none';
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    }
+
+    (function() {
+        const NUM_HARMONICS = 8;
+        const MIN_FREQ = 20;
+        const MAX_FREQ = 600;
+
+        const presets = {
+            'Pure': [1, 0, 0, 0, 0, 0, 0, 0],
+            'Saw': [1, 0.5, 0.33, 0.25, 0.2, 0.167, 0.143, 0.125],
+            'Square': [1, 0, 0.33, 0, 0.2, 0, 0.143, 0],
+            'Bell': [1, 0.6, 0.3, 0.1, 0.4, 0.05, 0.2, 0.02],
+            'Organ': [1, 0.8, 0.6, 0.4, 0.3, 0.2, 0.1, 0.05],
+            'Hollow': [1, 0, 0.5, 0, 0.3, 0, 0.1, 0],
+            'Bright': [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+            'Fifth': [1, 0, 0.7, 0, 0, 0.4, 0, 0],
+        };
+
+        let audioCtx = null;
+        let oscillators = [];
+        let gainNodes = [];
+        let masterGain = null;
+        let analyser = null;
+        let isPlaying = false;
+        let currentFreq = 440;
+        let harmonicAmps = [...presets['Pure']];
+        let activePreset = 'Pure';
+        let wakeLock = null;
+
+        // Silent audio element keeps the browser audio session alive when screen locks
+        const silentAudio = document.createElement('audio');
+        silentAudio.loop = true;
+        silentAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => { wakeLock = null; });
+                }
+            } catch (e) {}
+        }
+
+        function releaseWakeLock() {
+            if (wakeLock) { wakeLock.release(); wakeLock = null; }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && isPlaying) {
+                requestWakeLock();
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            }
+        });
+
+        const freqDisplay = document.getElementById('freq-value');
+        const noteDisplay = document.getElementById('note-name');
+        const pitchArea = document.getElementById('pitch-area');
+        const pitchFill = document.getElementById('pitch-fill');
+        const pitchIndicator = document.getElementById('pitch-indicator');
+        const playBtn = document.getElementById('play-btn');
+        const volSlider = document.getElementById('vol-slider');
+        const presetsContainer = document.getElementById('presets');
+        const harmonicsContainer = document.getElementById('harmonics-container');
+        const waveformCanvas = document.querySelector('.waveform-canvas');
+        const waveformCtx = waveformCanvas.getContext('2d');
+
+        const noteNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+        function freqToNote(freq) {
+            const midi = 69 + 12 * Math.log2(freq / 440);
+            const rounded = Math.round(midi);
+            const octave = Math.floor(rounded / 12) - 1;
+            const name = noteNames[rounded % 12];
+            const cents = Math.round((midi - rounded) * 100);
+            const centsStr = cents >= 0 ? `+${cents}` : `${cents}`;
+            return `${name}${octave} ${centsStr}c`;
+        }
+
+        function freqToPosition(freq) {
+            return (Math.log2(freq) - Math.log2(MIN_FREQ)) / (Math.log2(MAX_FREQ) - Math.log2(MIN_FREQ));
+        }
+
+        function positionToFreq(pos) {
+            pos = Math.max(0, Math.min(1, pos));
+            return MIN_FREQ * Math.pow(MAX_FREQ / MIN_FREQ, pos);
+        }
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = volSlider.value / 100 * 0.5;
+
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 256;
+            masterGain.connect(analyser);
+            analyser.connect(audioCtx.destination);
+
+            for (let i = 0; i < NUM_HARMONICS; i++) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = currentFreq * (i + 1);
+                gain.gain.value = 0;
+                osc.connect(gain);
+                gain.connect(masterGain);
+                osc.start();
+                oscillators.push(osc);
+                gainNodes.push(gain);
+            }
+        }
+
+        function updateFrequency(freq) {
+            currentFreq = freq;
+            freqDisplay.textContent = freq.toFixed(1);
+            noteDisplay.textContent = freqToNote(freq);
+
+            const pos = freqToPosition(freq);
+            pitchFill.style.height = (pos * 100) + '%';
+            pitchIndicator.style.bottom = (pos * 100) + '%';
+
+            if (audioCtx && isPlaying) {
+                const now = audioCtx.currentTime;
+                oscillators.forEach((osc, i) => {
+                    osc.frequency.setTargetAtTime(freq * (i + 1), now, 0.01);
+                });
+            }
+        }
+
+        function updateHarmonics() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            gainNodes.forEach((gain, i) => {
+                const target = isPlaying ? harmonicAmps[i] : 0;
+                gain.gain.setTargetAtTime(target, now, 0.02);
+            });
+        }
+
+        function startTone() {
+            initAudio();
+            audioCtx.resume().then(() => {
+                isPlaying = true;
+                playBtn.textContent = 'Stop';
+                playBtn.classList.add('active');
+                updateHarmonics();
+                updateFrequency(currentFreq);
+                drawWaveform();
+                silentAudio.play().catch(()=>{});
+                requestWakeLock();
+            });
+        }
+
+        function stopTone() {
+            isPlaying = false;
+            playBtn.textContent = 'Play';
+            playBtn.classList.remove('active');
+            updateHarmonics();
+            silentAudio.pause();
+            releaseWakeLock();
+        }
+
+        playBtn.addEventListener('click', () => {
+            if (isPlaying) stopTone();
+            else startTone();
+        });
+
+        playBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (isPlaying) stopTone();
+            else startTone();
+        });
+
+        volSlider.addEventListener('input', () => {
+            if (masterGain) {
+                masterGain.gain.setTargetAtTime(volSlider.value / 100 * 0.5, audioCtx.currentTime, 0.02);
+            }
+        });
+
+        // Pitch area touch/mouse handling
+        function handlePitchInput(e) {
+            e.preventDefault();
+            const rect = pitchArea.getBoundingClientRect();
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const pos = 1 - (clientY - rect.top) / rect.height;
+            const freq = positionToFreq(pos);
+            updateFrequency(freq);
+        }
+
+        let pitchActive = false;
+        pitchArea.addEventListener('touchstart', (e) => { pitchActive = true; handlePitchInput(e); });
+        pitchArea.addEventListener('touchmove', (e) => { if (pitchActive) handlePitchInput(e); });
+        pitchArea.addEventListener('touchend', () => { pitchActive = false; });
+        pitchArea.addEventListener('mousedown', (e) => { pitchActive = true; handlePitchInput(e); });
+        document.addEventListener('mousemove', (e) => { if (pitchActive) handlePitchInput(e); });
+        document.addEventListener('mouseup', () => { pitchActive = false; });
+
+        // Build preset buttons
+        Object.keys(presets).forEach(name => {
+            const btn = document.createElement('button');
+            btn.className = 'preset-btn' + (name === activePreset ? ' active' : '');
+            btn.textContent = name;
+            btn.addEventListener('click', () => {
+                activePreset = name;
+                harmonicAmps = [...presets[name]];
+                updateHarmonicSliders();
+                updateHarmonics();
+                document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+            presetsContainer.appendChild(btn);
+        });
+
+        // Build harmonic sliders
+        function buildHarmonicSliders() {
+            harmonicsContainer.innerHTML = '';
+            for (let i = 0; i < NUM_HARMONICS; i++) {
+                const row = document.createElement('div');
+                row.className = 'harmonic-row';
+
+                const label = document.createElement('span');
+                label.className = 'harmonic-label';
+                label.textContent = `H${i + 1}`;
+
+                const slider = document.createElement('input');
+                slider.type = 'range';
+                slider.className = 'harmonic-slider';
+                slider.min = '0';
+                slider.max = '100';
+                slider.value = Math.round(harmonicAmps[i] * 100);
+                slider.dataset.index = i;
+
+                const val = document.createElement('span');
+                val.className = 'harmonic-val';
+                val.id = `h-val-${i}`;
+                val.textContent = slider.value + '%';
+
+                slider.addEventListener('input', (e) => {
+                    const idx = parseInt(e.target.dataset.index);
+                    harmonicAmps[idx] = e.target.value / 100;
+                    document.getElementById(`h-val-${idx}`).textContent = e.target.value + '%';
+                    activePreset = null;
+                    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                    updateHarmonics();
+                });
+
+                row.appendChild(label);
+                row.appendChild(slider);
+                row.appendChild(val);
+                harmonicsContainer.appendChild(row);
+            }
+        }
+
+        function updateHarmonicSliders() {
+            for (let i = 0; i < NUM_HARMONICS; i++) {
+                const slider = harmonicsContainer.querySelectorAll('.harmonic-slider')[i];
+                if (slider) {
+                    slider.value = Math.round(harmonicAmps[i] * 100);
+                    document.getElementById(`h-val-${i}`).textContent = Math.round(harmonicAmps[i] * 100) + '%';
+                }
+            }
+        }
+
+        buildHarmonicSliders();
+
+        // Waveform visualization
+        function drawWaveform() {
+            if (!analyser || !isPlaying) {
+                waveformCtx.fillStyle = '#1a1a1a';
+                waveformCtx.fillRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+                return;
+            }
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteTimeDomainData(dataArray);
+
+            waveformCtx.fillStyle = '#1a1a1a';
+            waveformCtx.fillRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+
+            waveformCtx.lineWidth = 1.5;
+            waveformCtx.strokeStyle = '#f5c518';
+            waveformCtx.beginPath();
+
+            const sliceWidth = waveformCanvas.width / bufferLength;
+            let x = 0;
+
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0;
+                const y = v * waveformCanvas.height / 2;
+                if (i === 0) waveformCtx.moveTo(x, y);
+                else waveformCtx.lineTo(x, y);
+                x += sliceWidth;
+            }
+
+            waveformCtx.lineTo(waveformCanvas.width, waveformCanvas.height / 2);
+            waveformCtx.stroke();
+
+            requestAnimationFrame(drawWaveform);
+        }
+
+        // Tip modal
+        const BTC_ADDRESS = document.getElementById('btc-addr').textContent;
+        const tipBtn = document.getElementById('tip-btn');
+        const tipModal = document.getElementById('tip-modal');
+        const copyBtn = document.getElementById('copy-btn');
+        const modalClose = document.getElementById('modal-close');
+
+        tipBtn.addEventListener('click', () => {
+            tipModal.classList.add('open');
+            drawQR(BTC_ADDRESS);
+        });
+
+        tipBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            tipModal.classList.add('open');
+            drawQR(BTC_ADDRESS);
+        });
+
+        modalClose.addEventListener('click', () => tipModal.classList.remove('open'));
+        tipModal.addEventListener('click', (e) => {
+            if (e.target === tipModal) tipModal.classList.remove('open');
+        });
+
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(BTC_ADDRESS).then(() => {
+                copyBtn.textContent = 'COPIED!';
+                setTimeout(() => { copyBtn.textContent = 'COPY ADDRESS'; }, 2000);
+            }).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = BTC_ADDRESS;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                copyBtn.textContent = 'COPIED!';
+                setTimeout(() => { copyBtn.textContent = 'COPY ADDRESS'; }, 2000);
+            });
+        });
+
+        function drawQR(address) {
+            const canvas = document.getElementById('qr-canvas');
+            const ctx = canvas.getContext('2d');
+            const qr = qrcode(0, 'M');
+            qr.addData('bitcoin:' + address);
+            qr.make();
+
+            const moduleCount = qr.getModuleCount();
+            const padding = 8;
+            const cellSize = (canvas.width - padding * 2) / moduleCount;
+
+            ctx.fillStyle = '#f5c518';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0a0a0a';
+
+            for (let r = 0; r < moduleCount; r++) {
+                for (let c = 0; c < moduleCount; c++) {
+                    if (qr.isDark(r, c)) {
+                        ctx.fillRect(
+                            padding + c * cellSize,
+                            padding + r * cellSize,
+                            cellSize + 0.5,
+                            cellSize + 0.5
+                        );
+                    }
+                }
+            }
+        }
+
+        // Set initial position
+        updateFrequency(440);
+    })();
+    </script>
+</body>
+</html>
