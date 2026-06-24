@@ -554,15 +554,23 @@
             return MIN_FREQ * Math.pow(MAX_FREQ / MIN_FREQ, pos);
         }
 
+        let subBassBoost = null;
+
         function initAudio() {
             if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             masterGain = audioCtx.createGain();
             masterGain.gain.value = volSlider.value / 100 * 0.5;
 
+            subBassBoost = audioCtx.createBiquadFilter();
+            subBassBoost.type = 'lowshelf';
+            subBassBoost.frequency.value = 50;
+            subBassBoost.gain.value = 0;
+
             analyser = audioCtx.createAnalyser();
             analyser.fftSize = 256;
-            masterGain.connect(analyser);
+            masterGain.connect(subBassBoost);
+            subBassBoost.connect(analyser);
             analyser.connect(audioCtx.destination);
 
             for (let i = 0; i < NUM_HARMONICS; i++) {
@@ -594,13 +602,22 @@
                     osc.frequency.setTargetAtTime(freq * (i + 1), now, 0.01);
                 });
             }
+
+            if (subBassBoost) {
+                let boostDb = 0;
+                if (freq <= 20) boostDb = 24;
+                else if (freq <= 50) boostDb = 24 * (50 - freq) / 30;
+                subBassBoost.gain.setTargetAtTime(boostDb, audioCtx ? audioCtx.currentTime : 0, 0.05);
+            }
         }
 
         function updateHarmonics() {
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
+            const sum = harmonicAmps.reduce((a, b) => a + b, 0);
+            const normFactor = sum > 1 ? 1 / sum : 1;
             gainNodes.forEach((gain, i) => {
-                const target = isPlaying ? harmonicAmps[i] : 0;
+                const target = isPlaying ? harmonicAmps[i] * normFactor : 0;
                 gain.gain.setTargetAtTime(target, now, 0.02);
             });
         }
