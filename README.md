@@ -1,4 +1,4 @@
-# Tone Lab
+# Tone Lab/Tatabugs Deuterium Blaster
 
 A progressive web app tone generator with overtone series control.
 
